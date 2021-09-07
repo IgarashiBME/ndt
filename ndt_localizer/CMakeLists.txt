@@ -3,6 +3,18 @@ project(ndt_localizer)
 
 find_package(PCL REQUIRED)
 
+## add 20210901
+if(NOT (PCL_VERSION VERSION_LESS "1.7.2"))
+  SET(PCL_OPENMP_PACKAGES pcl_omp_registration)
+endif()
+
+find_package(OpenMP)
+if(OPENMP_FOUND)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+##
+
 find_package(Eigen3 QUIET)
 
 if(NOT EIGEN3_FOUND)
@@ -17,6 +29,7 @@ else()
 endif()
 
 find_package(catkin REQUIRED COMPONENTS
+  ${PCL_OPENMP_PACKAGES}
   ndt_msgs
   nav_msgs
   ndt_cpu
@@ -31,6 +44,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 catkin_package(
   CATKIN_DEPENDS
+    ${PCL_OPENMP_PACKAGES}
     ndt_cpu
     std_msgs
     velodyne_pointcloud
@@ -53,6 +67,11 @@ add_dependencies(ndt_matching ${catkin_EXPORTED_TARGETS})
 add_executable(ndt_mapping src/ndt_mapping.cpp)
 target_link_libraries(ndt_mapping ${catkin_LIBRARIES})
 add_dependencies(ndt_mapping ${catkin_EXPORTED_TARGETS})
+
+if(NOT (PCL_VERSION VERSION_LESS "1.7.2"))
+  set_target_properties(ndt_matching PROPERTIES COMPILE_DEFINITIONS "USE_PCL_OPENMP")
+  set_target_properties(ndt_mapping PROPERTIES COMPILE_DEFINITIONS "USE_PCL_OPENMP")
+endif()
 
 install(
   TARGETS
